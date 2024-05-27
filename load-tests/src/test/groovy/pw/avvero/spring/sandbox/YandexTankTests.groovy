@@ -37,7 +37,7 @@ class YandexTankTests extends Specification {
                 .withNetworkAliases("wiremock")
                 .withFileSystemBind(workingDirectory + "/src/test/resources/wiremock/mappings", "/home/wiremock/mappings", READ_WRITE)
                 .withCommand("--no-request-journal")
-                .withLogConsumer(new FileHeadLogConsumer(reportDirectory + "/logs/" + "wiremock" + ".log"))
+                .withLogConsumer(new FileHeadLogConsumer(reportDirectory + "/logs/wiremock.log"))
                 .waitingFor(new LogMessageWaitStrategy().withRegEx(".*https://wiremock.io/cloud.*"))
         wiremock.start()
         then:
@@ -48,7 +48,10 @@ class YandexTankTests extends Specification {
                 .withNetworkAliases("postgres")
                 .withEnv(["POSTGRES_USER": "sandbox", "POSTGRES_DB": "sandbox", "POSTGRES_PASSWORD": "sandbox"])
         postgres.start()
-        def javaOpts = ' -Xloggc:/tmp/gc/gc.log -XX:+PrintGCDetails' + ' -XX:+UnlockDiagnosticVMOptions' + ' -XX:+FlightRecorder' + ' -XX:StartFlightRecording:settings=default,dumponexit=true,disk=true,duration=120s,filename=/tmp/jfr/flight.jfr'
+        def javaOpts = ' -Xloggc:/tmp/gc/gc.log -XX:+PrintGCDetails' +
+                ' -XX:+UnlockDiagnosticVMOptions' +
+                ' -XX:+FlightRecorder' +
+                ' -XX:StartFlightRecording:settings=default,dumponexit=true,disk=true,duration=60s,filename=/tmp/jfr/flight.jfr'
         def sandbox = new GenericContainer<>(image)
                 .withNetwork(network)
                 .withNetworkAliases("sandbox")
@@ -62,7 +65,7 @@ class YandexTankTests extends Specification {
                         'spring.datasource.password'                    : 'sandbox',
                         'spring.jpa.properties.hibernate.default_schema': 'sandbox'
                 ])
-                .withLogConsumer(new FileHeadLogConsumer(reportDirectory + "/logs/" + "sandbox" + ".log"))
+                .withLogConsumer(new FileHeadLogConsumer(reportDirectory + "/logs/sandbox.log"))
                 .waitingFor(new LogMessageWaitStrategy().withRegEx(".*Started SandboxApplication.*"))
                 .withStartupTimeout(Duration.ofSeconds(10))
         sandbox.start()
@@ -78,7 +81,7 @@ class YandexTankTests extends Specification {
 //                            .withMemory(1024 * 1024 * 1024L)
 //                            .withMemorySwap(1024 * 1024 * 1024L);
 //                })
-                .withLogConsumer(new FileHeadLogConsumer(reportDirectory + "/logs/" + "yandex-tank" + ".log"))
+                .withLogConsumer(new FileHeadLogConsumer(reportDirectory + "/logs/yandex-tank.log"))
                 .waitingFor(new LogMessageWaitStrategy()
                         .withRegEx(".*Please open the following file: /opt/gatling/results.*")
                         .withStartupTimeout(Duration.ofSeconds(60L * 5))
