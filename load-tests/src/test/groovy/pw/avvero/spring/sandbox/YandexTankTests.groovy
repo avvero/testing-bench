@@ -2,6 +2,7 @@ package pw.avvero.spring.sandbox
 
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.Network
+import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy
 import spock.lang.Specification
 import spock.lang.Unroll
@@ -43,10 +44,12 @@ class YandexTankTests extends Specification {
         then:
         "Ok" == helper.execInContainer("wget", "-O", "-", "http://wiremock:8080/health").getStdout()
         when:
-        def postgres = new GenericContainer<>("postgres:10")
+        def postgres = new PostgreSQLContainer<>("postgres:15-alpine")
                 .withNetwork(network)
                 .withNetworkAliases("postgres")
-                .withEnv(["POSTGRES_USER": "sandbox", "POSTGRES_DB": "sandbox", "POSTGRES_PASSWORD": "sandbox"])
+                .withUsername("sandbox")
+                .withPassword("sandbox")
+                .withDatabaseName("sandbox")
         postgres.start()
         def javaOpts = ' -Xloggc:/tmp/gc/gc.log -XX:+PrintGCDetails' +
                 ' -XX:+UnlockDiagnosticVMOptions' +
