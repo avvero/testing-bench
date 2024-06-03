@@ -11,10 +11,10 @@ import java.time.Duration
 
 import static org.testcontainers.containers.BindMode.READ_WRITE
 
-class YandexTankTests extends Specification {
+class WrkTests extends Specification {
 
     @Unroll
-    def "Launch yandex-tank simulation"() {
+    def "Launch wrk simulation"() {
         setup:
         def workingDirectory = new File("").getAbsolutePath()
         def reportDirectory = workingDirectory + "/build/" + new Date().getTime()
@@ -75,21 +75,17 @@ class YandexTankTests extends Specification {
         then:
         helper.execInContainer("wget", "-O", "-", "http://sandbox:8080/actuator/health").getStdout() != ""
         when:
-        def tank = new GenericContainer<>("yandex/yandex-tank")
+        def wrk = new GenericContainer<>("ruslanys/wrk")
                 .withNetwork(network)
-                .withFileSystemBind(workingDirectory + "/src/test/resources/yandex-tank", "/var/loadtest", READ_WRITE)
-                .withEnv("SERVICE_URL", "http://sandbox:8080")
-//                .withCreateContainerCmdModifier(cmd -> {
-//                    cmd.getHostConfig()
-//                            .withMemory(1024 * 1024 * 1024L)
-//                            .withMemorySwap(1024 * 1024 * 1024L);
-//                })
-                .withLogConsumer(new FileHeadLogConsumer(reportDirectory + "/logs/yandex-tank.log"))
+                .withNetworkAliases("wrk")
+                .withFileSystemBind(workingDirectory + "/src/test/resources/wrk/scripts", "/tmp/scripts", READ_WRITE)
+                .withCommand("-t10", "-c10", "-d60s", "--latency", "-s", "/tmp/scripts/getForecast.lua", "http://sandbox:8080/weather/getForecast")
+                .withLogConsumer(new FileHeadLogConsumer(reportDirectory + "/logs/wrk.log"))
                 .waitingFor(new LogMessageWaitStrategy()
-                        .withRegEx(".*Please open the following file: /opt/gatling/results.*")
+                        .withRegEx(".*Transfer/sec.*")
                         .withStartupTimeout(Duration.ofSeconds(60L * 5))
-                );
-        tank.start()
+                )
+        wrk.start()
         then:
         noExceptionThrown()
         cleanup:
@@ -97,7 +93,7 @@ class YandexTankTests extends Specification {
         wiremock?.stop()
         sandbox?.stop()
         postgres?.stop()
-        tank?.stop()
+        wrk?.stop()
         where:
         image                  | _
         'avvero/sandbox:1.0.0' | _

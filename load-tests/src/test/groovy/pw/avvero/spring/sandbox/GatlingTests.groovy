@@ -42,7 +42,7 @@ class GatlingTests extends Specification {
                 .waitingFor(new LogMessageWaitStrategy().withRegEx(".*https://wiremock.io/cloud.*"))
         wiremock.start()
         then:
-        "Ok" == helper.execInContainer("wget", "-O", "-", "http://wiremock:8080/health").getStdout()
+        helper.execInContainer("wget", "-O", "-", "http://wiremock:8080/health").getStdout() == "Ok"
         when:
         def postgres = new PostgreSQLContainer<>("postgres:15-alpine")
                 .withNetwork(network)
@@ -73,7 +73,7 @@ class GatlingTests extends Specification {
                 .withStartupTimeout(Duration.ofSeconds(10))
         sandbox.start()
         then:
-        "" != helper.execInContainer("wget", "-O", "-", "http://sandbox:8080/actuator/health").getStdout()
+        helper.execInContainer("wget", "-O", "-", "http://sandbox:8080/actuator/health").getStdout() != ""
         when:
         def gatling = new GenericContainer<>("denvazh/gatling:3.2.1")
                 .withNetwork(network)
