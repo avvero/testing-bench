@@ -18,7 +18,7 @@ class WrkTests extends Specification {
         setup:
         def workingDirectory = new File("").getAbsolutePath()
         def reportDirectory = workingDirectory + "/build/" + new Date().getTime()
-        for (String tempDir : ["/logs", "/jfr", "/gatling-results"]) {
+        for (String tempDir : ["/logs", "/jfr"]) {
             File tempDirectory = new File(reportDirectory + tempDir)
             if (!tempDirectory.exists() && !tempDirectory.mkdirs()) {
                 throw new UnsupportedOperationException()
@@ -77,13 +77,12 @@ class WrkTests extends Specification {
         when:
         def wrk = new GenericContainer<>("ruslanys/wrk")
                 .withNetwork(network)
-                .withNetworkAliases("wrk")
                 .withFileSystemBind(workingDirectory + "/src/test/resources/wrk/scripts", "/tmp/scripts", READ_WRITE)
                 .withCommand("-t10", "-c10", "-d60s", "--latency", "-s", "/tmp/scripts/getForecast.lua", "http://sandbox:8080/weather/getForecast")
                 .withLogConsumer(new FileHeadLogConsumer(reportDirectory + "/logs/wrk.log"))
                 .waitingFor(new LogMessageWaitStrategy()
                         .withRegEx(".*Transfer/sec.*")
-                        .withStartupTimeout(Duration.ofSeconds(60L * 5))
+                        .withStartupTimeout(Duration.ofSeconds(60L * 2))
                 )
         wrk.start()
         then:

@@ -7,8 +7,12 @@ import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy
 import spock.lang.Specification
 import spock.lang.Unroll
 
+import java.nio.file.CopyOption
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 import java.time.Duration
 
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING
 import static org.testcontainers.containers.BindMode.READ_WRITE
 
 class YandexTankTests extends Specification {
@@ -18,7 +22,7 @@ class YandexTankTests extends Specification {
         setup:
         def workingDirectory = new File("").getAbsolutePath()
         def reportDirectory = workingDirectory + "/build/" + new Date().getTime()
-        for (String tempDir : ["/logs", "/jfr", "/gatling-results"]) {
+        for (String tempDir : ["/logs", "/jfr", "/yandex-tank"]) {
             File tempDirectory = new File(reportDirectory + tempDir)
             if (!tempDirectory.exists() && !tempDirectory.mkdirs()) {
                 throw new UnsupportedOperationException()
@@ -75,20 +79,15 @@ class YandexTankTests extends Specification {
         then:
         helper.execInContainer("wget", "-O", "-", "http://sandbox:8080/actuator/health").getStdout() != ""
         when:
+        copyFiles("${workingDirectory}/src/test/resources/yandex-tank", "${reportDirectory}/yandex-tank")
         def tank = new GenericContainer<>("yandex/yandex-tank")
                 .withNetwork(network)
-                .withFileSystemBind(workingDirectory + "/src/test/resources/yandex-tank", "/var/loadtest", READ_WRITE)
-                .withEnv("SERVICE_URL", "http://sandbox:8080")
-//                .withCreateContainerCmdModifier(cmd -> {
-//                    cmd.getHostConfig()
-//                            .withMemory(1024 * 1024 * 1024L)
-//                            .withMemorySwap(1024 * 1024 * 1024L);
-//                })
+                .withFileSystemBind(reportDirectory + "/yandex-tank", "/var/loadtest", READ_WRITE)
                 .withLogConsumer(new FileHeadLogConsumer(reportDirectory + "/logs/yandex-tank.log"))
                 .waitingFor(new LogMessageWaitStrategy()
-                        .withRegEx(".*Please open the following file: /opt/gatling/results.*")
-                        .withStartupTimeout(Duration.ofSeconds(60L * 5))
-                );
+                        .withRegEx(".*Phantom done its work.*")
+                        .withStartupTimeout(Duration.ofSeconds(60L * 2))
+                )
         tank.start()
         then:
         noExceptionThrown()
@@ -103,4 +102,16 @@ class YandexTankTests extends Specification {
         'avvero/sandbox:1.0.0' | _
     }
 
+    void copyFiles(String srcDir, String destDir) {
+        def src = new File(srcDir)
+        def dest = new File(destDir)
+        src.eachFile { file ->
+            def destFile = new File(dest, file.name)
+            if (file.isDirectory()) {
+                copyFiles(file.path, destFile.path)
+            } else {
+                Files.copy(file.toPath(), destFile.toPath(), REPLACE_EXISTING)
+            }
+        }
+    }
 }

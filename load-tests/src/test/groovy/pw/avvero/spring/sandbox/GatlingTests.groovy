@@ -85,7 +85,7 @@ class GatlingTests extends Specification {
                 .withLogConsumer(new FileHeadLogConsumer(reportDirectory + "/logs/gatling.log"))
                 .waitingFor(new LogMessageWaitStrategy()
                         .withRegEx(".*Please open the following file: /opt/gatling/results.*")
-                        .withStartupTimeout(Duration.ofSeconds(60L * 5))
+                        .withStartupTimeout(Duration.ofSeconds(60L * 2))
                 );
         gatling.start()
         then:
