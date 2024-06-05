@@ -10,6 +10,7 @@ import spock.lang.Unroll
 import java.time.Duration
 
 import static org.testcontainers.containers.BindMode.READ_WRITE
+import static pw.avvero.spring.sandbox.FileUtils.createTempDirs
 
 class WrkTests extends Specification {
 
@@ -17,16 +18,8 @@ class WrkTests extends Specification {
     def "Launch wrk simulation"() {
         setup:
         def workingDirectory = new File("").getAbsolutePath()
-        def reportDirectory = workingDirectory + "/build/" + new Date().getTime()
-        for (String tempDir : ["/logs", "/jfr"]) {
-            File tempDirectory = new File(reportDirectory + tempDir)
-            if (!tempDirectory.exists() && !tempDirectory.mkdirs()) {
-                throw new UnsupportedOperationException()
-            }
-            tempDirectory.setReadable(true, false)
-            tempDirectory.setWritable(true, false)
-            tempDirectory.setExecutable(true, false)
-        }
+        def reportDirectory = "${workingDirectory}/build/" + new Date().getTime()
+        createTempDirs(reportDirectory, ["/logs", "/jfr"])
         def network = Network.newNetwork();
         def helper = new GenericContainer<>("alpine:3.17")
                 .withNetwork(network)
@@ -36,9 +29,9 @@ class WrkTests extends Specification {
         def wiremock = new GenericContainer<>("wiremock/wiremock:3.5.4")
                 .withNetwork(network)
                 .withNetworkAliases("wiremock")
-                .withFileSystemBind(workingDirectory + "/src/test/resources/wiremock/mappings", "/home/wiremock/mappings", READ_WRITE)
+                .withFileSystemBind("${workingDirectory}/src/test/resources/wiremock/mappings", "/home/wiremock/mappings", READ_WRITE)
                 .withCommand("--no-request-journal")
-                .withLogConsumer(new FileHeadLogConsumer(reportDirectory + "/logs/wiremock.log"))
+                .withLogConsumer(new FileHeadLogConsumer("${reportDirectory}/logs/wiremock.log"))
                 .waitingFor(new LogMessageWaitStrategy().withRegEx(".*https://wiremock.io/cloud.*"))
         wiremock.start()
         then:
@@ -58,8 +51,8 @@ class WrkTests extends Specification {
         def sandbox = new GenericContainer<>(image)
                 .withNetwork(network)
                 .withNetworkAliases("sandbox")
-                .withFileSystemBind(reportDirectory + "/logs", "/tmp/gc", READ_WRITE)
-                .withFileSystemBind(reportDirectory + "/jfr", "/tmp/jfr", READ_WRITE)
+                .withFileSystemBind("${reportDirectory}/logs", "/tmp/gc", READ_WRITE)
+                .withFileSystemBind("${reportDirectory}/jfr", "/tmp/jfr", READ_WRITE)
                 .withEnv([
                         'JAVA_OPTS'                                     : javaOpts,
                         'app.weather.url'                               : 'http://wiremock:8080',
@@ -68,7 +61,7 @@ class WrkTests extends Specification {
                         'spring.datasource.password'                    : 'sandbox',
                         'spring.jpa.properties.hibernate.default_schema': 'sandbox'
                 ])
-                .withLogConsumer(new FileHeadLogConsumer(reportDirectory + "/logs/sandbox.log"))
+                .withLogConsumer(new FileHeadLogConsumer("${reportDirectory}/logs/sandbox.log"))
                 .waitingFor(new LogMessageWaitStrategy().withRegEx(".*Started SandboxApplication.*"))
                 .withStartupTimeout(Duration.ofSeconds(10))
         sandbox.start()
@@ -77,9 +70,9 @@ class WrkTests extends Specification {
         when:
         def wrk = new GenericContainer<>("ruslanys/wrk")
                 .withNetwork(network)
-                .withFileSystemBind(workingDirectory + "/src/test/resources/wrk/scripts", "/tmp/scripts", READ_WRITE)
+                .withFileSystemBind("${workingDirectory}/src/test/resources/wrk/scripts", "/tmp/scripts", READ_WRITE)
                 .withCommand("-t10", "-c10", "-d60s", "--latency", "-s", "/tmp/scripts/getForecast.lua", "http://sandbox:8080/weather/getForecast")
-                .withLogConsumer(new FileHeadLogConsumer(reportDirectory + "/logs/wrk.log"))
+                .withLogConsumer(new FileHeadLogConsumer("${reportDirectory}/logs/wrk.log"))
                 .waitingFor(new LogMessageWaitStrategy()
                         .withRegEx(".*Transfer/sec.*")
                         .withStartupTimeout(Duration.ofSeconds(60L * 2))
