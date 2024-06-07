@@ -5,8 +5,45 @@ in a Gradle environment within a Gradle project.
 
 Supported load-testing tools:
 - Gatling
+- Wrk
+- Yandex.Tank
 
-### Usage
+## Project structure 
+
+```properties
+load-tests/
+|-- src/
+|   |-- gatling/
+|   |   |-- scala/
+|   |   |   |-- MainSimulation.scala         # Main Gatling simulation file
+|   |   |-- resources/
+|   |   |   |-- gatling.conf                 # Gatling configuration file
+|   |   |   |-- logback-test.xml             # Logback configuration for testing
+|   |-- test/
+|   |   |-- groovy/
+|   |   |   |-- pw.avvero.spring.sandbox/
+|   |   |   |   |-- GatlingTests.groovy      # Gatling load test file
+|   |   |   |   |-- WrkTests.groovy          # Wrk load test file
+|   |   |   |   |-- YandexTankTests.groovy   # Yandex.Tank load test file
+|   |   |-- java/
+|   |   |   |-- pw.avvero.spring.sandbox/
+|   |   |   |   |-- FileHeadLogConsumer.java # Helper class for logging to a file
+|   |   |-- resources/
+|   |   |   |-- wiremock/
+|   |   |   |   |-- mappings/                # WireMock setup for mocking external services
+|   |   |   |   |   |-- health.json          
+|   |   |   |   |   |-- forecast.json
+|   |   |   |-- yandex-tank/                 # Yandex.Tank load testing configuration
+|   |   |   |   |-- ammo.txt
+|   |   |   |   |-- load.yaml
+|   |   |   |   |-- make_ammo.py
+|   |   |   |-- wrk/                         # LuaJIT scripts for Wrk
+|   |   |   |   |-- scripts/                 
+|   |   |   |   |   |-- getForecast.lua
+|-- build.gradle
+```
+
+## Usage
 1. Ensure Java and Gradle are installed on your system.
 2. Clone this repository to your local machine.
 3. Navigate to the root directory of the project.
@@ -16,49 +53,60 @@ Supported load-testing tools:
 ./gradlew :load-tests:test --tests "pw.avvero.spring.sandbox.GatlingTests"
 ```
 
-### Reporting
+## Reporting
 
-Performance results, including metrics and logs, are saved in the `build/${timestamp}` directory, where `${timestamp}` 
-represents a timestamp indicating each test run in the ISO 8601 format.
-List of Report Entities:
-- WireMock Logs
-- Gatling Report
-- Garbage Collector logs
-- *Target Service Logs
-- Gatling Logs
-- JFR (Java Flight Recording)
+Test results, including JVM performance recordings and logs, are saved in the directory `build/${timestamp}`, where 
+`${timestamp}` represents the timestamp of each test run.
 
-```bash
-performance/
+The following reports will be available for review:
+- Garbage Collector logs.
+- WireMock logs.
+- Target service logs.
+- Wrk logs.
+- JFR (Java Flight Recording).
+
+If Gatling was used:
+- Gatling report.
+- Gatling logs.
+
+If Wrk was used:
+- Wrk logs.
+
+If Yandex.Tank was used:
+- Yandex.Tank result files, with an additional upload to [Overload](https://overload.yandex.net/).
+- Yandex.Tank logs.
+
+The directory structure for the reports is as follows:
+```
+load-tests/
 |-- build/
 |   |-- ${timestamp}/
 |   |   |-- gatling-results/
 |   |   |-- jfr/
-|   |   |   |-- flight.jfr
+|   |   |-- yandex-tank/
 |   |   |-- logs/
-|   |   |   |-- dps.log
+|   |   |   |-- sandbox.log
 |   |   |   |-- gatling.log
 |   |   |   |-- gc.log
 |   |   |   |-- wiremock.log
 |   |   |   |-- wrk.log
-|   |   |   |-- ...
+|   |   |   |-- yandex-tank.log
 |   |-- ${timestamp}/
 |   |-- ...
 ```
 
-### Additional Information
-- For customizing the load testing scenarios or configurations, refer to the Spock tests in the `src/test/groovy` directory of the `load-tests` module.
-- Ensure Docker is installed and running on your machine, as Testcontainers rely on Docker for container management during test execution.
+## References
+- Medium Article - https://medium.com/@avvero.abernathy/testcontainers-based-load-testing-bench-112a275f549d
+- Habr Article - https://habr.com/ru/articles/819589/
 
-### Known issues
+## Known issues
 
-#### Settings for JFR
+### Settings for JFR
 Using options like `dumponexit=true,disk=true` with `-XX:StartFlightRecording:settings=` should ideally force JFR 
 to write metrics. However, in some cases, this doesn't work as expected. To ensure proper recording, it's necessary 
 to manipulate timings. Please ensure that tests run for a duration longer than the `duration=120s` setting.
 
-### Yandex tank
+### Yandex tank ammo configuration
 ```python
-echo "POST||/weather/getForecast||get forecast||{\"city\": \"London\"}" | ./make_ammo.py
 echo "POST||/weather/getForecast||get_forecast||{\"city\": \"London\"}" | python3 load-tests/src/test/resources/yandex-tank/make_ammo.py
 ```
