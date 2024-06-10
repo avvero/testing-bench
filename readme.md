@@ -8,6 +8,10 @@ Supported load-testing tools:
 - Wrk
 - Yandex.Tank
 
+## References
+- Medium Article - https://medium.com/@avvero.abernathy/testcontainers-based-load-testing-bench-112a275f549d
+- Habr Article - https://habr.com/ru/articles/819589/
+
 ## Project structure 
 
 ```properties
@@ -94,10 +98,6 @@ load-tests/
 |   |-- ${timestamp}/
 |   |-- ...
 ```
-
-## References
-- Medium Article - https://medium.com/@avvero.abernathy/testcontainers-based-load-testing-bench-112a275f549d
-- Habr Article - https://habr.com/ru/articles/819589/
 
 ## Known issues
 
