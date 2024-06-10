@@ -9,8 +9,8 @@ Supported load-testing tools:
 - Yandex.Tank
 
 ## References
-- Medium Article - https://medium.com/@avvero.abernathy/testcontainers-based-load-testing-bench-112a275f549d
-- Habr Article - https://habr.com/ru/articles/819589/
+- [Testcontainers-based Load Testing Bench - Medium Article](https://medium.com/@avvero.abernathy/testcontainers-based-load-testing-bench-112a275f549d)
+- [Testcontainers-based Load Testing Bench - Habr Article](https://habr.com/ru/articles/819589/)
 
 ## Project structure 
 
