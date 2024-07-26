@@ -1,7 +1,7 @@
 ### Overview
 **Problem**: Setting up environments for integration tests is often complex and time-consuming.\
 **Solution**: Using Testcontainers to launch containers with different versions of databases, message brokers, and load testing tools in the format of Spock tests.\
-**Status**: Currently using.
+**Status**: Completed, article is published, currently using.
 
 ----
 
@@ -16,8 +16,9 @@ Supported load-testing tools:
 - Yandex.Tank
 
 ## References
-- [Testcontainers-based Load Testing Bench - Medium Article](https://medium.com/@avvero.abernathy/testcontainers-based-load-testing-bench-112a275f549d)
-- [Testcontainers-based Load Testing Bench - Habr Article](https://habr.com/ru/articles/819589/)
+Article on Medium - [Testcontainers-based Load Testing Bench](https://medium.com/@avvero.abernathy/testcontainers-based-load-testing-bench-112a275f549d)
+
+Article on Habr - [Стенд для нагрузочного тестирования на Testcontainers](https://habr.com/ru/articles/819589/)
 
 ## Project structure 
 
