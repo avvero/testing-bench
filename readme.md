@@ -1,3 +1,10 @@
+### Overview
+**Problem**: Setting up environments for integration tests is often complex and time-consuming.\
+**Solution**: Using Testcontainers to launch containers with different versions of databases, message brokers, and load testing tools in the format of Spock tests.\
+**Status**: Currently using.
+
+----
+
 # Testcontainers-based Load Testing Bench
 
 This module serves as a load testing stand for demonstrating load testing approach using Spock tests with Testcontainers 
